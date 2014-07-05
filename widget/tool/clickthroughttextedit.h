@@ -16,6 +16,7 @@ protected:
     // They can't receive anything by themselves since they believe they are text
     void mousePressEvent(QMouseEvent *e);
     void mouseReleaseEvent(QMouseEvent *e);
+    void mouseMoveEvent(QMouseEvent *e);
 
 private:
     // List of widgets currently embedded in the QTextEdit's QTextDocument

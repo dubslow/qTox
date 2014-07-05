@@ -3,6 +3,9 @@
 #include "widget/friendwidget.h"
 #include "widget/widget.h"
 #include "widget/filetransfertwidget.h"
+#include "widget/netcamview.h"
+#include "widget/tool/chattextedit.h"
+#include "widget/tool/clickthroughttextedit.h"
 #include <QFont>
 #include <QTime>
 #include <QScrollBar>
@@ -11,19 +14,14 @@
 #include <QTextTable>
 #include <QVariant>
 
-int ChatForm::fileTransfertTextFormat{QTextFormat::UserObject + 1};
-
 ChatForm::ChatForm(Friend* chatFriend)
-    : f(chatFriend), curRow{0}, lockSliderToBottom{true}
+    : AbstractChatForm(), f(chatFriend), curRow{0}
 {
-    main = new QWidget(), head = new QWidget();
-    chatAreaWidget = new ClickthroughtTextEdit();
     name = new QLabel(), avatar = new QLabel(), statusMessage = new QLabel();
-    headLayout = new QHBoxLayout(), mainFootLayout = new QHBoxLayout();
-    headTextLayout = new QVBoxLayout(), mainLayout = new QVBoxLayout(), footButtonsSmall = new QVBoxLayout();
-    msgEdit = new ChatTextEdit();
-    sendButton = new QPushButton(), fileButton = new QPushButton(), emoteButton = new QPushButton(), callButton = new QPushButton(), videoButton = new QPushButton();
-    chatArea = new QScrollArea();
+    headLayout = new QHBoxLayout();
+    headTextLayout = new QVBoxLayout(), footButtonsSmall = new QVBoxLayout();
+    sendButton = new QPushButton(), fileButton = new QPushButton(), emoteButton = new QPushButton();
+    callButton = new QPushButton(), videoButton = new QPushButton();
     netcam = new NetCamView();
 
     QFont bold;
@@ -36,43 +34,7 @@ ChatForm::ChatForm(Friend* chatFriend)
     //avatar->setPixmap(*chatFriend->widget->avatar.pixmap());
     avatar->setPixmap(QPixmap(":/img/contact_dark.png"));
 
-    chatAreaWidget->setReadOnly(true);
-    QTextTableFormat tableFormat;
-    tableFormat.setColumnWidthConstraints({QTextLength(QTextLength::VariableLength,0),
-                                          QTextLength(QTextLength::PercentageLength,100),
-                                          QTextLength(QTextLength::VariableLength,0)});
-    tableFormat.setBorderStyle(QTextFrameFormat::BorderStyle_None);
-    chatTable = chatAreaWidget->textCursor().insertTable(1,3);
-    chatTable->setFormat(tableFormat);
-    QString chatAreaStylesheet = "";
-    try
-    {
-        QFile f(":/ui/chatArea/chatArea.css");
-        f.open(QFile::ReadOnly | QFile::Text);
-        QTextStream chatAreaStylesheetStream(&f);
-        chatAreaStylesheet = chatAreaStylesheetStream.readAll();
-    }
-    catch (int e) {}
-    chatArea->setStyleSheet(chatAreaStylesheet);
-    chatArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    chatArea->setWidgetResizable(true);
-    chatArea->setContextMenuPolicy(Qt::CustomContextMenu);
-    chatArea->setFrameStyle(QFrame::NoFrame);
-
     footButtonsSmall->setSpacing(2);
-
-    QString msgEditStylesheet = "";
-    try
-    {
-        QFile f(":/ui/msgEdit/msgEdit.css");
-        f.open(QFile::ReadOnly | QFile::Text);
-        QTextStream msgEditStylesheetStream(&f);
-        msgEditStylesheet = msgEditStylesheetStream.readAll();
-    }
-    catch (int e) {}
-    msgEdit->setStyleSheet(msgEditStylesheet);
-    msgEdit->setFixedHeight(50);
-    msgEdit->setFrameStyle(QFrame::NoFrame);
 
     QString sendButtonStylesheet = "";
     try
@@ -132,7 +94,6 @@ ChatForm::ChatForm(Friend* chatFriend)
     videoButton->setObjectName("green");
     videoButton->setStyleSheet(videoButtonStylesheet);
 
-    main->setLayout(mainLayout);
     mainLayout->addWidget(chatArea);
     mainLayout->addLayout(mainFootLayout);
     mainLayout->setMargin(0);
@@ -140,7 +101,6 @@ ChatForm::ChatForm(Friend* chatFriend)
     footButtonsSmall->addWidget(emoteButton);
     footButtonsSmall->addWidget(fileButton);
 
-    mainFootLayout->addWidget(msgEdit);
     mainFootLayout->addLayout(footButtonsSmall);
     mainFootLayout->addSpacing(5);
     mainFootLayout->addWidget(sendButton);
@@ -158,17 +118,12 @@ ChatForm::ChatForm(Friend* chatFriend)
     headTextLayout->addWidget(statusMessage);
     headTextLayout->addStretch();
 
-    chatArea->setWidget(chatAreaWidget);
-
     connect(Widget::getInstance()->getCore(), &Core::fileSendStarted, this, &ChatForm::startFileSend);
     connect(Widget::getInstance()->getCore(), &Core::videoFrameReceived, netcam, &NetCamView::updateDisplay);
     connect(sendButton, SIGNAL(clicked()), this, SLOT(onSendTriggered()));
     connect(fileButton, SIGNAL(clicked()), this, SLOT(onAttachClicked()));
     connect(callButton, SIGNAL(clicked()), this, SLOT(onCallTriggered()));
     connect(videoButton, SIGNAL(clicked()), this, SLOT(onVideoCallTriggered()));
-    connect(msgEdit, SIGNAL(enterPressed()), this, SLOT(onSendTriggered()));
-    connect(chatArea->verticalScrollBar(), SIGNAL(rangeChanged(int,int)), this, SLOT(onSliderRangeChanged()));
-    connect(chatArea, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(onChatContextMenuRequested(QPoint)));
 }
 
 ChatForm::~ChatForm()
@@ -176,14 +131,6 @@ ChatForm::~ChatForm()
     delete main;
     delete head;
     delete netcam;
-}
-
-void ChatForm::show(Ui::Widget &ui)
-{
-    ui.mainContent->layout()->addWidget(main);
-    ui.mainHead->layout()->addWidget(head);
-    main->show();
-    head->show();
 }
 
 void ChatForm::setName(QString newName)
@@ -196,6 +143,11 @@ void ChatForm::setStatusMessage(QString newMessage)
     statusMessage->setText(newMessage);
 }
 
+void ChatForm::addFriendMessage(QString message)
+{
+    addMessage(name->text(), message);
+}
+
 void ChatForm::onSendTriggered()
 {
     QString msg = msgEdit->toPlainText();
@@ -205,76 +157,6 @@ void ChatForm::onSendTriggered()
     msgEdit->clear();
     addMessage(name, msg);
     emit sendMessage(f->friendId, msg);
-}
-
-void ChatForm::addFriendMessage(QString message)
-{
-    QLabel *msgAuthor = new QLabel(name->text());
-    QLabel *msgText = new QLabel(message);
-    QLabel *msgDate = new QLabel(QTime::currentTime().toString("hh:mm"));
-
-    addMessage(msgAuthor, msgText, msgDate);
-}
-
-void ChatForm::addMessage(QString author, QString message, QString date)
-{
-    addMessage(new QLabel(author), new QLabel(message), new QLabel(date));
-}
-
-void ChatForm::addMessage(QLabel* author, QLabel* message, QLabel* date)
-{
-    QTextBlockFormat rightAlign;
-    rightAlign.setAlignment(Qt::AlignRight);
-    rightAlign.setNonBreakableLines(true);
-    QTextBlockFormat leftAlign;
-    leftAlign.setAlignment(Qt::AlignLeft);
-    leftAlign.setNonBreakableLines(true);
-    QPalette greentext;
-    greentext.setColor(QPalette::WindowText, QColor(61,204,61));
-    QScrollBar* scroll = chatArea->verticalScrollBar();
-    lockSliderToBottom = scroll && scroll->value() == scroll->maximum();
-    author->setAlignment(Qt::AlignTop | Qt::AlignRight);
-    date->setAlignment(Qt::AlignTop);
-    message->setWordWrap(true);
-    message->setTextInteractionFlags(Qt::TextBrowserInteraction);
-    author->setTextInteractionFlags(Qt::TextBrowserInteraction);
-    date->setTextInteractionFlags(Qt::TextBrowserInteraction);
-    if (author->text() == Widget::getInstance()->getUsername())
-    {
-        QPalette pal;
-        pal.setColor(QPalette::WindowText, QColor(100,100,100));
-        author->setPalette(pal);
-        message->setPalette(pal);
-    }
-    if (previousName.isEmpty() || previousName != author->text())
-    {
-        if (curRow)
-        {
-            chatTable->appendRows(1);
-        }
-        previousName = author->text();
-        curRow++;
-    }
-    else if (curRow)// onSaveLogClicked expects 0 or 3 QLabel per line
-        author->setText("");
-    if (message->text()[0] == '>')
-        message->setPalette(greentext);
-
-    int row=chatTable->rows()-1;
-    chatTable->cellAt(row,0).firstCursorPosition().setBlockFormat(rightAlign);
-    chatTable->cellAt(row,2).firstCursorPosition().setBlockFormat(leftAlign);
-    chatTable->cellAt(row,0).firstCursorPosition().insertText(author->text());
-    chatTable->cellAt(row,1).firstCursorPosition().insertText(message->text());
-    chatTable->cellAt(row,2).firstCursorPosition().insertText(date->text());
-    chatTable->appendRows(1);
-
-    curRow++;
-    author->setContextMenuPolicy(Qt::CustomContextMenu);
-    message->setContextMenuPolicy(Qt::CustomContextMenu);
-    date->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(author, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(onChatContextMenuRequested(QPoint)));
-    connect(message, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(onChatContextMenuRequested(QPoint)));
-    connect(date, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(onChatContextMenuRequested(QPoint)));
 }
 
 void ChatForm::onAttachClicked()
@@ -291,13 +173,6 @@ void ChatForm::onAttachClicked()
     QFileInfo fi(path);
 
     emit sendFile(f->friendId, fi.fileName(), fileData);
-}
-
-void ChatForm::onSliderRangeChanged()
-{
-    QScrollBar* scroll = chatArea->verticalScrollBar();
-    if (lockSliderToBottom)
-         scroll->setValue(scroll->maximum());
 }
 
 void ChatForm::startFileSend(ToxFile file)

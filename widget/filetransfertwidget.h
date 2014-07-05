@@ -61,6 +61,7 @@ protected:
     // We have to simulate mouse events, since we're supposed to be text inside the QTextEdit
     void mousePressEvent(QMouseEvent *e);
     void mouseReleaseEvent(QMouseEvent *e);
+    void mouseMoveEvent(QMouseEvent *e);
 
 private:
     QString getHumanReadableSize(int size);

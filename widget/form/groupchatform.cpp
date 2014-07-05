@@ -4,6 +4,8 @@
 #include "widget/widget.h"
 #include "friend.h"
 #include "friendlist.h"
+#include "widget/tool/chattextedit.h"
+#include "widget/tool/clickthroughttextedit.h"
 #include <QFont>
 #include <QTime>
 #include <QScrollBar>
@@ -14,14 +16,11 @@
 GroupChatForm::GroupChatForm(Group* chatGroup)
     : group(chatGroup), curRow{0}, lockSliderToBottom{true}
 {
-    main = new QWidget(), head = new QWidget(), chatAreaWidget = new QWidget();
     headLayout = new QHBoxLayout(), mainFootLayout = new QHBoxLayout();
     headTextLayout = new QVBoxLayout(), mainLayout = new QVBoxLayout();
     mainChatLayout = new QGridLayout();
     avatar = new QLabel(), name = new QLabel(), nusers = new QLabel(), namesList = new QLabel();
-    msgEdit = new ChatTextEdit();
     sendButton = new QPushButton();
-    chatArea = new QScrollArea();
     QFont bold;
     bold.setBold(true);
     QFont small;
@@ -122,14 +121,6 @@ GroupChatForm::~GroupChatForm()
 {
     delete head;
     delete main;
-}
-
-void GroupChatForm::show(Ui::Widget &ui)
-{
-    ui.mainContent->layout()->addWidget(main);
-    ui.mainHead->layout()->addWidget(head);
-    main->show();
-    head->show();
 }
 
 void GroupChatForm::setName(QString newName)

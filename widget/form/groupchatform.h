@@ -10,21 +10,17 @@
 #include <QScrollArea>
 #include <QTime>
 
-#include "widget/tool/chattextedit.h"
-#include "ui_widget.h"
-
-// Spacing in px inserted when the author of the last message changes
-#define AUTHOR_CHANGE_SPACING 5
+#include "widget/form/abstractchatform.h"
 
 class Group;
+class QPushButton;
 
-class GroupChatForm : public QObject
+class GroupChatForm : public AbstractChatForm
 {
     Q_OBJECT
 public:
     GroupChatForm(Group* chatGroup);
     ~GroupChatForm();
-    void show(Ui::Widget& ui);
     void setName(QString newName);
     void addGroupMessage(QString message, int peerId);
     void addMessage(QString author, QString message, QString date=QTime::currentTime().toString("hh:mm"));
@@ -42,14 +38,11 @@ private slots:
 
 private:
     Group* group;
-    QHBoxLayout *headLayout, *mainFootLayout;
-    QVBoxLayout *headTextLayout, *mainLayout;
+    QHBoxLayout *headLayout;
+    QVBoxLayout *headTextLayout;
     QGridLayout *mainChatLayout;
     QLabel *avatar, *name, *nusers, *namesList;
-    ChatTextEdit *msgEdit;
     QPushButton *sendButton;
-    QScrollArea *chatArea;
-    QWidget *main, *head, *chatAreaWidget;
     QString previousName;
     int curRow;
     bool lockSliderToBottom;

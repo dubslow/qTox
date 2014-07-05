@@ -7,6 +7,7 @@
 #include <QPixmap>
 #include <QPainter>
 #include <QTextBlock>
+#include <QEnterEvent>
 
 FileTransfertWidget::FileTransfertWidget()
 {
@@ -14,7 +15,7 @@ FileTransfertWidget::FileTransfertWidget()
     // Initialized by intrisicSize()
 }
 
-QSizeF FileTransfertWidget::intrinsicSize(QTextDocument* doc, int pos, const QTextFormat& format)
+QSizeF FileTransfertWidget::intrinsicSize(QTextDocument*, int, const QTextFormat& format)
 {
     if (!initialized)
     {
@@ -150,7 +151,7 @@ QSizeF FileTransfertWidget::intrinsicSize(QTextDocument* doc, int pos, const QTe
         connect(Widget::getInstance()->getCore(), &Core::fileTransferFinished, this, &FileTransfertWidget::onFileTransferFinished);
     }
 
-    return QSizeF(this->width(), this->height());
+    return QSizeF(this->minimumWidth(), this->maximumHeight());
 }
 
 void FileTransfertWidget::drawObject(QPainter *painter, const QRectF &rect, QTextDocument*, int, const QTextFormat&)
@@ -193,6 +194,48 @@ void FileTransfertWidget::mouseReleaseEvent(QMouseEvent *e)
     {
         QMouseEvent newEvent(QEvent::MouseButtonRelease, QPoint(0,0),Qt::LeftButton, e->buttons(), Qt::NoModifier);
         QApplication::sendEvent(bottomright, &newEvent);
+    }
+}
+
+void FileTransfertWidget::mouseMoveEvent(QMouseEvent *e)
+{
+    static bool toprightIn = false, bottomrightIn = false;
+    QPoint localpoint = e->pos();
+    QPoint btnSize = topright->rect().bottomRight() - topright->rect().topLeft();
+    QRect toprightRect = QRect(rect().topRight()-QPoint(btnSize.x(),0), rect().topRight()+QPoint(0,btnSize.y()));
+    QRect bottomrightRect = QRect(rect().bottomRight()-QPoint(btnSize.x(),0), rect().bottomRight()-QPoint(0,btnSize.y()));
+    QPointF nullpoint(0,0);
+
+    if (toprightRect.contains(localpoint))
+    {
+        if (!toprightIn)
+        {
+            toprightIn = true;
+            QEnterEvent newEvent(nullpoint, nullpoint, nullpoint);
+            QApplication::sendEvent(topright, &newEvent);
+        }
+    }
+    else if (toprightIn)
+    {
+        toprightIn = false;
+        QEvent newEvent(QEvent::Leave);
+        QApplication::sendEvent(topright, &newEvent);
+    }
+
+    if (bottomrightRect.contains(localpoint))
+    {
+        if (!bottomrightIn)
+        {
+            bottomrightIn = true;
+            QMouseEvent newEvent(QEvent::MouseMove, QPoint(0,0),Qt::NoButton, e->buttons(), Qt::NoModifier);
+            QApplication::sendEvent(bottomright, &newEvent);
+        }
+    }
+    else if (bottomrightIn)
+    {
+        toprightIn = false;
+        QEvent newEvent(QEvent::Leave);
+        QApplication::sendEvent(topright, &newEvent);
     }
 }
 

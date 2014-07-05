@@ -1,39 +1,30 @@
 #ifndef CHATFORM_H
 #define CHATFORM_H
 
-#include <QLabel>
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGridLayout>
-#include <QTextEdit>
-#include <QScrollArea>
 #include <QTime>
 #include <QPoint>
 
-#include "widget/tool/chattextedit.h"
-#include "ui_widget.h"
 #include "core.h"
-#include "widget/netcamview.h"
-#include "widget/tool/clickthroughttextedit.h"
-
-// Spacing in px inserted when the author of the last message changes
-#define AUTHOR_CHANGE_SPACING 5
+#include "widget/form/abstractchatform.h"
 
 struct Friend;
+class NetCamView;
+class QLabel;
+class QPushButton;
 
-class ChatForm : public QObject
+class ChatForm : public AbstractChatForm
 {
     Q_OBJECT
 public:
     ChatForm(Friend* chatFriend);
     ~ChatForm();
-    void show(Ui::Widget& ui);
     void setName(QString newName);
     void setStatusMessage(QString newMessage);
     void addFriendMessage(QString message);
-    void addMessage(QString author, QString message, QString date=QTime::currentTime().toString("hh:mm"));
-    void addMessage(QLabel* author, QLabel* message, QLabel* date);
 
 signals:
     void sendMessage(int, QString);
@@ -58,9 +49,8 @@ public slots:
     void onAvPeerTimeout(int FriendId, int CallId);
 
 private slots:
-    void onSendTriggered();
+    virtual void onSendTriggered() override;
     void onAttachClicked();
-    void onSliderRangeChanged();
     void onCallTriggered();
     void onVideoCallTriggered();
     void onAnswerCallTriggered();
@@ -69,24 +59,14 @@ private slots:
     void onChatContextMenuRequested(QPoint pos);
     void onSaveLogClicked();
 
-public:
-static int fileTransfertTextFormat;
-
 private:
     Friend* f;
-    QHBoxLayout *headLayout, *mainFootLayout;
-    QVBoxLayout *headTextLayout, *mainLayout, *footButtonsSmall;
+    QHBoxLayout *headLayout;
+    QVBoxLayout *headTextLayout, *footButtonsSmall;
     QLabel *avatar, *name, *statusMessage;
-    ChatTextEdit *msgEdit;
     QPushButton *sendButton, *fileButton, *emoteButton, *callButton, *videoButton;
-    QScrollArea *chatArea;
-    QWidget *main, *head;
-    ClickthroughtTextEdit* chatAreaWidget;
-    QTextTable* chatTable;
-    QString previousName;
     NetCamView* netcam;
     int curRow;
-    bool lockSliderToBottom;
     int callId;
 };
 

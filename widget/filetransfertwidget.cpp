@@ -2,132 +2,198 @@
 #include "widget.h"
 #include "core.h"
 #include "math.h"
+#include "widget/form/chatform.h"
 #include <QFileDialog>
 #include <QPixmap>
 #include <QPainter>
+#include <QTextBlock>
 
-FileTransfertWidget::FileTransfertWidget(ToxFile File)
-    : lastUpdate{QDateTime::currentDateTime()}, lastBytesSent{0},
-      fileNum{File.fileNum}, friendId{File.friendId}, direction{File.direction}
+FileTransfertWidget::FileTransfertWidget()
 {
-    pic=new QLabel(), filename=new QLabel(), size=new QLabel(), speed=new QLabel(), eta=new QLabel();
-    topright = new QPushButton(), bottomright = new QPushButton();
-    progress = new QProgressBar();
-    mainLayout = new QHBoxLayout(), textLayout = new QHBoxLayout();
-    infoLayout = new QVBoxLayout(), buttonLayout = new QVBoxLayout();
-    buttonWidget = new QWidget();
-    QFont prettysmall;
-    prettysmall.setPixelSize(10);
-    this->setObjectName("default");
-    QFile f0(":/ui/fileTransferWidget/fileTransferWidget.css");
-    f0.open(QFile::ReadOnly | QFile::Text);
-    QTextStream fileTransfertWidgetStylesheet(&f0);
-    this->setStyleSheet(fileTransfertWidgetStylesheet.readAll());
-    QPalette greybg;
-    greybg.setColor(QPalette::Window, QColor(209,209,209));
-    greybg.setColor(QPalette::Base, QColor(150,150,150));
-    setPalette(greybg);
-    setAutoFillBackground(true);
+    initialized=false;
+    // Initialized by intrisicSize()
+}
 
-    setMinimumSize(250,58);
-    setMaximumHeight(58);
-    setLayout(mainLayout);
-    mainLayout->setMargin(0);
-
-    pic->setMaximumHeight(40);
-    pic->setContentsMargins(5,0,0,0);
-    filename->setText(File.fileName);
-    filename->setFont(prettysmall);
-    size->setText(getHumanReadableSize(File.filesize));
-    size->setFont(prettysmall);
-    speed->setText("0B/s");
-    speed->setFont(prettysmall);
-    eta->setText("00:00");
-    eta->setFont(prettysmall);
-    progress->setValue(0);
-    progress->setMinimumHeight(11);
-    progress->setFont(prettysmall);
-    progress->setTextVisible(false);
-    QPalette whitebg;
-    whitebg.setColor(QPalette::Window, QColor(255,255,255));
-    buttonWidget->setPalette(whitebg);
-    buttonWidget->setAutoFillBackground(true);
-    buttonWidget->setLayout(buttonLayout);
-
-    QFile f1(":/ui/stopFileButton/style.css");
-    f1.open(QFile::ReadOnly | QFile::Text);
-    QTextStream stopFileButtonStylesheetStream(&f1);
-    stopFileButtonStylesheet = stopFileButtonStylesheetStream.readAll();
-
-    QFile f2(":/ui/pauseFileButton/style.css");
-    f2.open(QFile::ReadOnly | QFile::Text);
-    QTextStream pauseFileButtonStylesheetStream(&f2);
-    pauseFileButtonStylesheet = pauseFileButtonStylesheetStream.readAll();
-
-    QFile f3(":/ui/acceptFileButton/style.css");
-    f3.open(QFile::ReadOnly | QFile::Text);
-    QTextStream acceptFileButtonStylesheetStream(&f3);
-    acceptFileButtonStylesheet = acceptFileButtonStylesheetStream.readAll();
-
-    topright->setStyleSheet(stopFileButtonStylesheet);
-    if (File.direction == ToxFile::SENDING)
+QSizeF FileTransfertWidget::intrinsicSize(QTextDocument* doc, int pos, const QTextFormat& format)
+{
+    if (!initialized)
     {
-        bottomright->setStyleSheet(pauseFileButtonStylesheet);
-        connect(topright, SIGNAL(clicked()), this, SLOT(cancelTransfer()));
-        connect(bottomright, SIGNAL(clicked()), this, SLOT(pauseResumeSend()));
+        initialized=true;
+        ToxFile File = format.property(ChatForm::fileTransfertTextFormat).value<ToxFile>();
+        lastUpdate = QDateTime::currentDateTime();
+        lastBytesSent= 0;
+        fileNum = File.fileNum;
+        friendId = File.friendId;
+        direction = File.direction;
 
-        QPixmap preview;
-        if (preview.loadFromData(File.fileData))
+        pic=new QLabel(), filename=new QLabel(), size=new QLabel(), speed=new QLabel(), eta=new QLabel();
+        topright = new QPushButton(), bottomright = new QPushButton();
+        progress = new QProgressBar();
+        mainLayout = new QHBoxLayout(), textLayout = new QHBoxLayout();
+        infoLayout = new QVBoxLayout(), buttonLayout = new QVBoxLayout();
+        buttonWidget = new QWidget();
+        QFont prettysmall;
+        prettysmall.setPixelSize(10);
+        this->setObjectName("default");
+        QFile f0(":/ui/fileTransferWidget/fileTransferWidget.css");
+        f0.open(QFile::ReadOnly | QFile::Text);
+        QTextStream fileTransfertWidgetStylesheet(&f0);
+        this->setStyleSheet(fileTransfertWidgetStylesheet.readAll());
+        QPalette greybg;
+        greybg.setColor(QPalette::Window, QColor(209,209,209));
+        greybg.setColor(QPalette::Base, QColor(150,150,150));
+        setPalette(greybg);
+        setAutoFillBackground(true);
+
+        setMinimumSize(250,58);
+        setMaximumHeight(58);
+        setLayout(mainLayout);
+        mainLayout->setMargin(0);
+
+        pic->setMaximumHeight(40);
+        pic->setContentsMargins(5,0,0,0);
+        filename->setText(File.fileName);
+        filename->setFont(prettysmall);
+        size->setText(getHumanReadableSize(File.filesize));
+        size->setFont(prettysmall);
+        speed->setText("0B/s");
+        speed->setFont(prettysmall);
+        eta->setText("00:00");
+        eta->setFont(prettysmall);
+        progress->setValue(0);
+        progress->setMinimumHeight(11);
+        progress->setFont(prettysmall);
+        progress->setTextVisible(false);
+        QPalette whitebg;
+        whitebg.setColor(QPalette::Window, QColor(255,255,255));
+        buttonWidget->setPalette(whitebg);
+        buttonWidget->setAutoFillBackground(true);
+        buttonWidget->setLayout(buttonLayout);
+
+        QFile f1(":/ui/stopFileButton/style.css");
+        f1.open(QFile::ReadOnly | QFile::Text);
+        QTextStream stopFileButtonStylesheetStream(&f1);
+        stopFileButtonStylesheet = stopFileButtonStylesheetStream.readAll();
+
+        QFile f2(":/ui/pauseFileButton/style.css");
+        f2.open(QFile::ReadOnly | QFile::Text);
+        QTextStream pauseFileButtonStylesheetStream(&f2);
+        pauseFileButtonStylesheet = pauseFileButtonStylesheetStream.readAll();
+
+        QFile f3(":/ui/acceptFileButton/style.css");
+        f3.open(QFile::ReadOnly | QFile::Text);
+        QTextStream acceptFileButtonStylesheetStream(&f3);
+        acceptFileButtonStylesheet = acceptFileButtonStylesheetStream.readAll();
+
+        topright->setStyleSheet(stopFileButtonStylesheet);
+        if (File.direction == ToxFile::SENDING)
         {
-            preview = preview.scaledToHeight(40);
-            pic->setPixmap(preview);
+            bottomright->setStyleSheet(pauseFileButtonStylesheet);
+            connect(topright, SIGNAL(clicked()), this, SLOT(cancelTransfer()));
+            connect(bottomright, SIGNAL(clicked()), this, SLOT(pauseResumeSend()));
+
+            QPixmap preview;
+            if (preview.loadFromData(File.fileData))
+            {
+                preview = preview.scaledToHeight(40);
+                pic->setPixmap(preview);
+            }
         }
+        else
+        {
+            bottomright->setStyleSheet(acceptFileButtonStylesheet);
+            connect(topright, SIGNAL(clicked()), this, SLOT(rejectRecvRequest()));
+            connect(bottomright, SIGNAL(clicked()), this, SLOT(acceptRecvRequest()));
+        }
+
+        QPalette toxgreen;
+        toxgreen.setColor(QPalette::Button, QColor(107,194,96)); // Tox Green
+        topright->setIconSize(QSize(10,10));
+        topright->setMinimumSize(25,28);
+        topright->setFlat(true);
+        topright->setAutoFillBackground(true);
+        topright->setPalette(toxgreen);
+        bottomright->setIconSize(QSize(10,10));
+        bottomright->setMinimumSize(25,28);
+        bottomright->setFlat(true);
+        bottomright->setAutoFillBackground(true);
+        bottomright->setPalette(toxgreen);
+
+        mainLayout->addStretch();
+        mainLayout->addWidget(pic);
+        mainLayout->addLayout(infoLayout,3);
+        mainLayout->addStretch();
+        mainLayout->addWidget(buttonWidget);
+        mainLayout->setMargin(0);
+        mainLayout->setSpacing(0);
+
+        infoLayout->addWidget(filename);
+        infoLayout->addLayout(textLayout);
+        infoLayout->addWidget(progress);
+        infoLayout->setMargin(4);
+        infoLayout->setSpacing(4);
+
+        textLayout->addWidget(size);
+        textLayout->addWidget(speed);
+        textLayout->addWidget(eta);
+        textLayout->setMargin(2);
+        textLayout->setSpacing(5);
+
+        buttonLayout->addWidget(topright);
+        buttonLayout->addSpacing(2);
+        buttonLayout->addWidget(bottomright);
+        buttonLayout->setContentsMargins(2,0,0,0);
+        buttonLayout->setSpacing(0);
+
+        connect(Widget::getInstance()->getCore(), &Core::fileTransferInfo, this, &FileTransfertWidget::onFileTransferInfo);
+        connect(Widget::getInstance()->getCore(), &Core::fileTransferCancelled, this, &FileTransfertWidget::onFileTransferCancelled);
+        connect(Widget::getInstance()->getCore(), &Core::fileTransferFinished, this, &FileTransfertWidget::onFileTransferFinished);
     }
-    else
+
+    return QSizeF(this->width(), this->height());
+}
+
+void FileTransfertWidget::drawObject(QPainter *painter, const QRectF &rect, QTextDocument*, int, const QTextFormat&)
+{
+    this->render(painter, QPoint(rect.x(), rect.y()));
+}
+
+void FileTransfertWidget::mousePressEvent(QMouseEvent *e)
+{
+    QPoint localpoint = e->pos();
+    QPoint btnSize = topright->rect().bottomRight() - topright->rect().topLeft();
+    QRect toprightRect = QRect(rect().topRight()-QPoint(btnSize.x(),0), rect().topRight()+QPoint(0,btnSize.y()));
+    QRect bottomrightRect = QRect(rect().bottomRight()-QPoint(btnSize.x(),0), rect().bottomRight()-QPoint(0,btnSize.y()));
+
+    if (toprightRect.contains(localpoint))
     {
-        bottomright->setStyleSheet(acceptFileButtonStylesheet);
-        connect(topright, SIGNAL(clicked()), this, SLOT(rejectRecvRequest()));
-        connect(bottomright, SIGNAL(clicked()), this, SLOT(acceptRecvRequest()));
+        QMouseEvent newEvent(QEvent::MouseButtonPress, QPoint(0,0),Qt::LeftButton, e->buttons(), Qt::NoModifier);
+        QApplication::sendEvent(topright, &newEvent);
     }
+    else if (bottomrightRect.contains(localpoint))
+    {
+        QMouseEvent newEvent(QEvent::MouseButtonPress, QPoint(0,0),Qt::LeftButton, e->buttons(), Qt::NoModifier);
+        QApplication::sendEvent(bottomright, &newEvent);
+    }
+}
 
-    QPalette toxgreen;
-    toxgreen.setColor(QPalette::Button, QColor(107,194,96)); // Tox Green
-    topright->setIconSize(QSize(10,10));
-    topright->setMinimumSize(25,28);
-    topright->setFlat(true);
-    topright->setAutoFillBackground(true);
-    topright->setPalette(toxgreen);
-    bottomright->setIconSize(QSize(10,10));
-    bottomright->setMinimumSize(25,28);
-    bottomright->setFlat(true);
-    bottomright->setAutoFillBackground(true);
-    bottomright->setPalette(toxgreen);
+void FileTransfertWidget::mouseReleaseEvent(QMouseEvent *e)
+{
+    QPoint localpoint = e->pos();
+    QPoint btnSize = topright->rect().bottomRight() - topright->rect().topLeft();
+    QRect toprightRect = QRect(rect().topRight()-QPoint(btnSize.x(),0), rect().topRight()+QPoint(0,btnSize.y()));
+    QRect bottomrightRect = QRect(rect().bottomRight()-QPoint(btnSize.x(),0), rect().bottomRight()-QPoint(0,btnSize.y()));
 
-    mainLayout->addStretch();
-    mainLayout->addWidget(pic);
-    mainLayout->addLayout(infoLayout,3);
-    mainLayout->addStretch();
-    mainLayout->addWidget(buttonWidget);
-    mainLayout->setMargin(0);
-    mainLayout->setSpacing(0);
-
-    infoLayout->addWidget(filename);
-    infoLayout->addLayout(textLayout);
-    infoLayout->addWidget(progress);
-    infoLayout->setMargin(4);
-    infoLayout->setSpacing(4);
-
-    textLayout->addWidget(size);
-    textLayout->addWidget(speed);
-    textLayout->addWidget(eta);
-    textLayout->setMargin(2);
-    textLayout->setSpacing(5);
-
-    buttonLayout->addWidget(topright);
-    buttonLayout->addSpacing(2);
-    buttonLayout->addWidget(bottomright);
-    buttonLayout->setContentsMargins(2,0,0,0);
-    buttonLayout->setSpacing(0);
+    if (toprightRect.contains(localpoint))
+    {
+        QMouseEvent newEvent(QEvent::MouseButtonRelease, QPoint(0,0),Qt::LeftButton, e->buttons(), Qt::NoModifier);
+        QApplication::sendEvent(topright, &newEvent);
+    }
+    else if (bottomrightRect.contains(localpoint))
+    {
+        QMouseEvent newEvent(QEvent::MouseButtonRelease, QPoint(0,0),Qt::LeftButton, e->buttons(), Qt::NoModifier);
+        QApplication::sendEvent(bottomright, &newEvent);
+    }
 }
 
 QString FileTransfertWidget::getHumanReadableSize(int size)
@@ -186,9 +252,7 @@ void FileTransfertWidget::onFileTransferCancelled(int FriendId, int FileNum, Tox
     this->setObjectName("error");
     this->style()->polish(this);
 
-    //Toggle window visibility to fix draw order bug
-    this->hide();
-    this->show();
+    emit needsRedrawing();
 }
 
 void FileTransfertWidget::onFileTransferFinished(ToxFile File)
@@ -210,9 +274,7 @@ void FileTransfertWidget::onFileTransferFinished(ToxFile File)
     this->setObjectName("success");
     this->style()->polish(this);
 
-    //Toggle window visibility to fix draw order bug
-    this->hide();
-    this->show();
+    emit needsRedrawing();
 
     if (File.direction == ToxFile::RECEIVING)
     {

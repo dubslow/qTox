@@ -8,15 +8,19 @@
 #include <QScrollBar>
 #include <QFileDialog>
 #include <QMenu>
+#include <QTextTable>
+#include <QVariant>
+
+int ChatForm::fileTransfertTextFormat{QTextFormat::UserObject + 1};
 
 ChatForm::ChatForm(Friend* chatFriend)
     : f(chatFriend), curRow{0}, lockSliderToBottom{true}
 {
-    main = new QWidget(), head = new QWidget(), chatAreaWidget = new QWidget();
+    main = new QWidget(), head = new QWidget();
+    chatAreaWidget = new ClickthroughtTextEdit();
     name = new QLabel(), avatar = new QLabel(), statusMessage = new QLabel();
     headLayout = new QHBoxLayout(), mainFootLayout = new QHBoxLayout();
     headTextLayout = new QVBoxLayout(), mainLayout = new QVBoxLayout(), footButtonsSmall = new QVBoxLayout();
-    mainChatLayout = new QGridLayout();
     msgEdit = new ChatTextEdit();
     sendButton = new QPushButton(), fileButton = new QPushButton(), emoteButton = new QPushButton(), callButton = new QPushButton(), videoButton = new QPushButton();
     chatArea = new QScrollArea();
@@ -32,7 +36,14 @@ ChatForm::ChatForm(Friend* chatFriend)
     //avatar->setPixmap(*chatFriend->widget->avatar.pixmap());
     avatar->setPixmap(QPixmap(":/img/contact_dark.png"));
 
-    chatAreaWidget->setLayout(mainChatLayout);
+    chatAreaWidget->setReadOnly(true);
+    QTextTableFormat tableFormat;
+    tableFormat.setColumnWidthConstraints({QTextLength(QTextLength::VariableLength,0),
+                                          QTextLength(QTextLength::PercentageLength,100),
+                                          QTextLength(QTextLength::VariableLength,0)});
+    tableFormat.setBorderStyle(QTextFrameFormat::BorderStyle_None);
+    chatTable = chatAreaWidget->textCursor().insertTable(1,3);
+    chatTable->setFormat(tableFormat);
     QString chatAreaStylesheet = "";
     try
     {
@@ -47,9 +58,6 @@ ChatForm::ChatForm(Friend* chatFriend)
     chatArea->setWidgetResizable(true);
     chatArea->setContextMenuPolicy(Qt::CustomContextMenu);
     chatArea->setFrameStyle(QFrame::NoFrame);
-
-    mainChatLayout->setColumnStretch(1,1);
-    mainChatLayout->setSpacing(5);
 
     footButtonsSmall->setSpacing(2);
 
@@ -215,6 +223,12 @@ void ChatForm::addMessage(QString author, QString message, QString date)
 
 void ChatForm::addMessage(QLabel* author, QLabel* message, QLabel* date)
 {
+    QTextBlockFormat rightAlign;
+    rightAlign.setAlignment(Qt::AlignRight);
+    rightAlign.setNonBreakableLines(true);
+    QTextBlockFormat leftAlign;
+    leftAlign.setAlignment(Qt::AlignLeft);
+    leftAlign.setNonBreakableLines(true);
     QPalette greentext;
     greentext.setColor(QPalette::WindowText, QColor(61,204,61));
     QScrollBar* scroll = chatArea->verticalScrollBar();
@@ -236,8 +250,7 @@ void ChatForm::addMessage(QLabel* author, QLabel* message, QLabel* date)
     {
         if (curRow)
         {
-            mainChatLayout->setRowStretch(curRow, 0);
-            mainChatLayout->addItem(new QSpacerItem(0,AUTHOR_CHANGE_SPACING),curRow,0,1,3);
+            chatTable->appendRows(1);
         }
         previousName = author->text();
         curRow++;
@@ -246,11 +259,15 @@ void ChatForm::addMessage(QLabel* author, QLabel* message, QLabel* date)
         author->setText("");
     if (message->text()[0] == '>')
         message->setPalette(greentext);
-    mainChatLayout->addWidget(author, curRow, 0);
-    mainChatLayout->addWidget(message, curRow, 1);
-    mainChatLayout->addWidget(date, curRow, 3);
-    mainChatLayout->setRowStretch(curRow+1, 1);
-    mainChatLayout->setRowStretch(curRow, 0);
+
+    int row=chatTable->rows()-1;
+    chatTable->cellAt(row,0).firstCursorPosition().setBlockFormat(rightAlign);
+    chatTable->cellAt(row,2).firstCursorPosition().setBlockFormat(leftAlign);
+    chatTable->cellAt(row,0).firstCursorPosition().insertText(author->text());
+    chatTable->cellAt(row,1).firstCursorPosition().insertText(message->text());
+    chatTable->cellAt(row,2).firstCursorPosition().insertText(date->text());
+    chatTable->appendRows(1);
+
     curRow++;
     author->setContextMenuPolicy(Qt::CustomContextMenu);
     message->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -287,6 +304,13 @@ void ChatForm::startFileSend(ToxFile file)
 {
     if (file.friendId != f->friendId)
         return;
+    QTextBlockFormat rightAlign;
+    rightAlign.setAlignment(Qt::AlignRight);
+    rightAlign.setNonBreakableLines(true);
+    QTextBlockFormat leftAlign;
+    leftAlign.setAlignment(Qt::AlignLeft);
+    leftAlign.setNonBreakableLines(true);
+    int row=chatTable->rows()-1;
     QLabel *author = new QLabel(Widget::getInstance()->getUsername());
     QLabel *date = new QLabel(QTime::currentTime().toString("hh:mm"));
     QScrollBar* scroll = chatArea->verticalScrollBar();
@@ -300,27 +324,35 @@ void ChatForm::startFileSend(ToxFile file)
     {
         if (curRow)
         {
-            mainChatLayout->setRowStretch(curRow, 0);
-            mainChatLayout->addItem(new QSpacerItem(0,AUTHOR_CHANGE_SPACING),curRow,0,1,3);
+            chatTable->appendRows(1);
             curRow++;
         }
-        mainChatLayout->addWidget(author, curRow, 0);
+        chatTable->cellAt(row,0).firstCursorPosition().setBlockFormat(rightAlign);
+        chatTable->cellAt(row,0).firstCursorPosition().insertText(author->text());
     }
-    FileTransfertWidget* fileTrans = new FileTransfertWidget(file);
     previousName = author->text();
-    mainChatLayout->addWidget(fileTrans, curRow, 1);
-    mainChatLayout->addWidget(date, curRow, 3);
-    mainChatLayout->setRowStretch(curRow+1, 1);
-    mainChatLayout->setRowStretch(curRow, 0);
     curRow++;
 
-    connect(Widget::getInstance()->getCore(), &Core::fileTransferInfo, fileTrans, &FileTransfertWidget::onFileTransferInfo);
-    connect(Widget::getInstance()->getCore(), &Core::fileTransferCancelled, fileTrans, &FileTransfertWidget::onFileTransferCancelled);
-    connect(Widget::getInstance()->getCore(), &Core::fileTransferFinished, fileTrans, &FileTransfertWidget::onFileTransferFinished);
+    QTextCharFormat charFormat;
+    QVariant storedFile;
+    storedFile.setValue(file);
+    fileTransfertTextFormat++;
+    QWidget *fileTransferInterface = new FileTransfertWidget();
+    chatAreaWidget->addClickee(fileTransferInterface);
+    chatAreaWidget->document()->documentLayout()->registerHandler(fileTransfertTextFormat, fileTransferInterface);
+    charFormat.setObjectType(fileTransfertTextFormat);
+    charFormat.setProperty(fileTransfertTextFormat, storedFile);
+    QPoint widgetpos = chatAreaWidget->cursorRect(chatTable->cellAt(row,1).firstCursorPosition()).topLeft();
+    fileTransferInterface->move(widgetpos);
+    chatTable->cellAt(row,1).firstCursorPosition().insertText(QString(QChar::ObjectReplacementCharacter), charFormat);
+    chatTable->cellAt(row,2).firstCursorPosition().setBlockFormat(leftAlign);
+    chatTable->cellAt(row,2).firstCursorPosition().insertText(date->text());
+    chatTable->appendRows(1);
 }
 
 void ChatForm::onFileRecvRequest(ToxFile file)
 {
+    /*
     if (file.friendId != f->friendId)
         return;
     QLabel *author = new QLabel(f->getName());
@@ -350,6 +382,7 @@ void ChatForm::onFileRecvRequest(ToxFile file)
     connect(Widget::getInstance()->getCore(), &Core::fileTransferInfo, fileTrans, &FileTransfertWidget::onFileTransferInfo);
     connect(Widget::getInstance()->getCore(), &Core::fileTransferCancelled, fileTrans, &FileTransfertWidget::onFileTransferCancelled);
     connect(Widget::getInstance()->getCore(), &Core::fileTransferFinished, fileTrans, &FileTransfertWidget::onFileTransferFinished);
+*/
 }
 
 void ChatForm::onAvInvite(int FriendId, int CallId, bool video)

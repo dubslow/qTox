@@ -15,6 +15,7 @@
 #include "ui_widget.h"
 #include "core.h"
 #include "widget/netcamview.h"
+#include "widget/tool/clickthroughttextedit.h"
 
 // Spacing in px inserted when the author of the last message changes
 #define AUTHOR_CHANGE_SPACING 5
@@ -68,16 +69,20 @@ private slots:
     void onChatContextMenuRequested(QPoint pos);
     void onSaveLogClicked();
 
+public:
+static int fileTransfertTextFormat;
+
 private:
     Friend* f;
     QHBoxLayout *headLayout, *mainFootLayout;
     QVBoxLayout *headTextLayout, *mainLayout, *footButtonsSmall;
-    QGridLayout *mainChatLayout;
     QLabel *avatar, *name, *statusMessage;
     ChatTextEdit *msgEdit;
     QPushButton *sendButton, *fileButton, *emoteButton, *callButton, *videoButton;
     QScrollArea *chatArea;
-    QWidget *main, *head, *chatAreaWidget;
+    QWidget *main, *head;
+    ClickthroughtTextEdit* chatAreaWidget;
+    QTextTable* chatTable;
     QString previousName;
     NetCamView* netcam;
     int curRow;

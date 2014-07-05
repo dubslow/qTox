@@ -75,6 +75,8 @@ struct ToxFile
     };
 
     ToxFile()=default;
+    ToxFile(const ToxFile&)=default;
+    ~ToxFile()=default;
     ToxFile(int FileNum, int FriendId, QByteArray FileData, long long Filesize, QByteArray FileName, FileDirection Direction)
         : fileNum(FileNum), friendId(FriendId), fileData{FileData}, fileName{FileName},
           bytesSent{0}, filesize(Filesize), status{STOPPED}, direction{Direction} {}
@@ -89,6 +91,7 @@ struct ToxFile
     FileDirection direction;
     QFuture<void> sendFuture;
 };
+Q_DECLARE_METATYPE(ToxFile)
 
 struct ToxCall
 {

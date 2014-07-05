@@ -69,7 +69,8 @@ HEADERS  += widget/form/addfriendform.h \
     widget/videosurface.h \
     widget/camera.h \
     widget/netcamview.h \
-    widget/tool/clickablelabel.h
+    widget/tool/clickablelabel.h \
+    widget/tool/clickthroughttextedit.h
 
 SOURCES += \
     widget/form/addfriendform.cpp \
@@ -100,4 +101,5 @@ SOURCES += \
     widget/videosurface.cpp \
     widget/camera.cpp \
     widget/netcamview.cpp \
-    widget/tool/clickablelabel.cpp
+    widget/tool/clickablelabel.cpp \
+    widget/tool/clickthroughttextedit.cpp

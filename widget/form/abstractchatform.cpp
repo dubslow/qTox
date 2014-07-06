@@ -73,14 +73,13 @@ void AbstractChatForm::show(Ui::Widget &ui)
 void AbstractChatForm::addMessage(QString author, QString message, QString date)
 {
     int row=chatTable->rows()-1;
+    QFont msgFont;
     QTextBlockFormat rightAlign;
     rightAlign.setAlignment(Qt::AlignRight);
     rightAlign.setNonBreakableLines(true);
     QTextBlockFormat leftAlign;
     leftAlign.setAlignment(Qt::AlignLeft);
     leftAlign.setNonBreakableLines(true);
-    QPalette greentext;
-    greentext.setColor(QPalette::WindowText, QColor(61,204,61));
     QScrollBar* scroll = chatArea->verticalScrollBar();
     lockSliderToBottom = scroll && scroll->value() == scroll->maximum();
     /** TODO: Write in gray
@@ -103,9 +102,15 @@ void AbstractChatForm::addMessage(QString author, QString message, QString date)
     }
     else if (row)
         author.clear();
-    ///if (message[0] == '>') TODO: Write in green
-        ///message->setPalette(greentext);
-
+    if (message[0] == '>')
+    {
+        QTextCharFormat greentext = chatTable->cellAt(row,1).format();
+        QPen gpen(QColor(61,204,61));
+        gpen.setJoinStyle(Qt::MiterJoin);
+        gpen.setCosmetic(false);
+        greentext.setTextOutline(gpen);
+        chatTable->cellAt(row,1).setFormat(greentext);
+    }
     chatTable->cellAt(row,0).firstCursorPosition().setBlockFormat(rightAlign);
     chatTable->cellAt(row,2).firstCursorPosition().setBlockFormat(leftAlign);
     chatTable->cellAt(row,0).firstCursorPosition().insertText(author);

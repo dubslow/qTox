@@ -36,6 +36,7 @@ GroupChatForm::GroupChatForm(Group* chatGroup)
     names.chop(2);
     namesList->setText(names);
     namesList->setFont(small);
+    namesList->setWordWrap(true);
 
     chatAreaWidget->setLayout(mainChatLayout);
     QString chatAreaStylesheet = "";

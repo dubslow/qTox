@@ -73,7 +73,6 @@ void AbstractChatForm::show(Ui::Widget &ui)
 void AbstractChatForm::addMessage(QString author, QString message, QString date)
 {
     int row=chatTable->rows()-1;
-    QFont msgFont;
     QTextBlockFormat rightAlign;
     rightAlign.setAlignment(Qt::AlignRight);
     rightAlign.setNonBreakableLines(true);
@@ -82,15 +81,13 @@ void AbstractChatForm::addMessage(QString author, QString message, QString date)
     leftAlign.setNonBreakableLines(true);
     QScrollBar* scroll = chatArea->verticalScrollBar();
     lockSliderToBottom = scroll && scroll->value() == scroll->maximum();
-    /** TODO: Write in gray
+    QTextCharFormat msgFormat = chatTable->cellAt(row,1).format();
+    QTextCharFormat nameFormat = chatTable->cellAt(row,0).format();
     if (author == Widget::getInstance()->getUsername())
     {
-        QPalette pal;
-        pal.setColor(QPalette::WindowText, QColor(100,100,100));
-        author->setPalette(pal);
-        message->setPalette(pal);
+        nameFormat.setForeground(QColor(100,100,100));
+        msgFormat.setForeground(QColor(100,100,100));
     }
-    */
     if (previousName.isEmpty() || previousName != author)
     {
         if (row)
@@ -104,17 +101,12 @@ void AbstractChatForm::addMessage(QString author, QString message, QString date)
         author.clear();
     if (message[0] == '>')
     {
-        QTextCharFormat greentext = chatTable->cellAt(row,1).format();
-        QPen gpen(QColor(61,204,61));
-        gpen.setJoinStyle(Qt::MiterJoin);
-        gpen.setCosmetic(false);
-        greentext.setTextOutline(gpen);
-        chatTable->cellAt(row,1).setFormat(greentext);
+        msgFormat.setForeground(QColor(61,204,61));
     }
     chatTable->cellAt(row,0).firstCursorPosition().setBlockFormat(rightAlign);
     chatTable->cellAt(row,2).firstCursorPosition().setBlockFormat(leftAlign);
-    chatTable->cellAt(row,0).firstCursorPosition().insertText(author);
-    chatTable->cellAt(row,1).firstCursorPosition().insertText(message);
+    chatTable->cellAt(row,0).firstCursorPosition().insertText(author, nameFormat);
+    chatTable->cellAt(row,1).firstCursorPosition().insertText(message, msgFormat);
     chatTable->cellAt(row,2).firstCursorPosition().insertText(date);
     chatTable->appendRows(1);
 }

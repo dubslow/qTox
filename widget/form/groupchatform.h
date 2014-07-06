@@ -23,16 +23,13 @@ public:
     ~GroupChatForm();
     void setName(QString newName);
     void addGroupMessage(QString message, int peerId);
-    void addMessage(QString author, QString message, QString date=QTime::currentTime().toString("hh:mm"));
-    void addMessage(QLabel* author, QLabel* message, QLabel* date);
     void onUserListChanged();
 
 signals:
     void sendMessage(int, QString);
 
 private slots:
-    void onSendTriggered();
-    void onSliderRangeChanged();
+    virtual void onSendTriggered() override;
     void onChatContextMenuRequested(QPoint pos);
     void onSaveLogClicked();
 

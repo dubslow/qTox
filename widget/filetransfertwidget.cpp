@@ -162,6 +162,8 @@ void FileTransfertWidget::drawObject(QPainter *painter, const QRectF &rect, QTex
 void FileTransfertWidget::mousePressEvent(QMouseEvent *e)
 {
     QPoint localpoint = e->pos();
+    if (localpoint == QPoint(0,0)) // Avoid infinite recursion
+        return;
     QPoint btnSize = topright->rect().bottomRight() - topright->rect().topLeft();
     QRect toprightRect = QRect(rect().topRight()-QPoint(btnSize.x(),0), rect().topRight()+QPoint(0,btnSize.y()));
     QRect bottomrightRect = QRect(rect().bottomRight()-QPoint(btnSize.x(),0), rect().bottomRight()-QPoint(0,btnSize.y()));
@@ -181,6 +183,8 @@ void FileTransfertWidget::mousePressEvent(QMouseEvent *e)
 void FileTransfertWidget::mouseReleaseEvent(QMouseEvent *e)
 {
     QPoint localpoint = e->pos();
+    if (localpoint == QPoint(0,0)) // Avoid infinite recursion
+        return;
     QPoint btnSize = topright->rect().bottomRight() - topright->rect().topLeft();
     QRect toprightRect = QRect(rect().topRight()-QPoint(btnSize.x(),0), rect().topRight()+QPoint(0,btnSize.y()));
     QRect bottomrightRect = QRect(rect().bottomRight()-QPoint(btnSize.x(),0), rect().bottomRight()-QPoint(0,btnSize.y()));

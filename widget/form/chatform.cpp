@@ -228,6 +228,7 @@ void ChatForm::startFileSend(ToxFile file)
     charFormat.setObjectType(fileTransfertTextFormat);
     charFormat.setProperty(fileTransfertTextFormat, storedFile);
     QPoint widgetpos = chatAreaWidget->cursorRect(chatTable->cellAt(row,1).firstCursorPosition()).topLeft();
+    widgetpos.ry() += chatAreaWidget->verticalScrollBar()->value();
     fileTransferInterface->move(widgetpos);
 
     chatTable->cellAt(row,1).firstCursorPosition().insertText(QString(QChar::ObjectReplacementCharacter), charFormat);
@@ -276,6 +277,7 @@ void ChatForm::onFileRecvRequest(ToxFile file)
     charFormat.setObjectType(fileTransfertTextFormat);
     charFormat.setProperty(fileTransfertTextFormat, storedFile);
     QPoint widgetpos = chatAreaWidget->cursorRect(chatTable->cellAt(row,1).firstCursorPosition()).topLeft();
+    widgetpos.ry() += chatAreaWidget->verticalScrollBar()->value();
     fileTransferInterface->move(widgetpos);
 
     chatTable->cellAt(row,1).firstCursorPosition().insertText(QString(QChar::ObjectReplacementCharacter), charFormat);

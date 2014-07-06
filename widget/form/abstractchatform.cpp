@@ -94,6 +94,7 @@ void AbstractChatForm::addMessage(QString author, QString message, QString date)
         if (row)
         {
             chatTable->appendRows(1);
+            row++;
         }
         previousName = author;
     }

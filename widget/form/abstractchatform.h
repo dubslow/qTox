@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QTime>
 #include <QString>
+#include <QPoint>
 
 // Spacing in px inserted when the author of the last message changes
 #define AUTHOR_CHANGE_SPACING 5
@@ -26,8 +27,10 @@ public:
     void show(Ui::Widget& ui);
 
 private slots:
+    void onChatContextMenuRequested(QPoint pos);
     virtual void onSendTriggered()=0;
     void onSliderRangeChanged();
+    void onSaveLogClicked();
 
 public:
     static int fileTransfertTextFormat;

@@ -56,8 +56,6 @@ private slots:
     void onAnswerCallTriggered();
     void onHangupCallTriggered();
     void onCancelCallTriggered();
-    void onChatContextMenuRequested(QPoint pos);
-    void onSaveLogClicked();
 
 private:
     Friend* f;

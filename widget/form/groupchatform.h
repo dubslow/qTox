@@ -30,8 +30,6 @@ signals:
 
 private slots:
     virtual void onSendTriggered() override;
-    void onChatContextMenuRequested(QPoint pos);
-    void onSaveLogClicked();
 
 private:
     Group* group;

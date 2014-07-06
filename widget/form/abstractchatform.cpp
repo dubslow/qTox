@@ -7,6 +7,7 @@
 #include <QTextTable>
 #include <QTextStream>
 #include <QFile>
+#include <QFileDialog>
 #include <QScrollArea>
 #include <QScrollBar>
 
@@ -42,6 +43,8 @@ AbstractChatForm::AbstractChatForm()
     chatArea->setFrameStyle(QFrame::NoFrame);
     chatArea->setWidget(chatAreaWidget);
 
+    chatAreaWidget->setContextMenuPolicy(Qt::CustomContextMenu);
+
     QTextTableFormat tableFormat;
     tableFormat.setColumnWidthConstraints({QTextLength(QTextLength::VariableLength,0),
                                           QTextLength(QTextLength::PercentageLength,100),
@@ -56,7 +59,7 @@ AbstractChatForm::AbstractChatForm()
 
     connect(msgEdit, SIGNAL(enterPressed()), this, SLOT(onSendTriggered()));
     connect(chatArea->verticalScrollBar(), SIGNAL(rangeChanged(int,int)), this, SLOT(onSliderRangeChanged()));
-    connect(chatArea, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(onChatContextMenuRequested(QPoint)));
+    connect(chatAreaWidget, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(onChatContextMenuRequested(QPoint)));
 }
 
 void AbstractChatForm::show(Ui::Widget &ui)
@@ -116,4 +119,29 @@ void AbstractChatForm::onSliderRangeChanged()
     QScrollBar* scroll = chatArea->verticalScrollBar();
     if (lockSliderToBottom)
          scroll->setValue(scroll->maximum());
+}
+
+void AbstractChatForm::onChatContextMenuRequested(QPoint pos)
+{
+    QWidget* sender = (QWidget*)QObject::sender();
+    pos = sender->mapToGlobal(pos);
+    QMenu menu;
+    menu.addAction(tr("Save chat log"), this, SLOT(onSaveLogClicked()));
+    menu.exec(pos);
+}
+
+void AbstractChatForm::onSaveLogClicked()
+{
+    QString path = QFileDialog::getSaveFileName(0,tr("Save chat log"));
+    if (path.isEmpty())
+        return;
+
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        return;
+
+    QString log = chatAreaWidget->toPlainText();
+
+    file.write(log.toUtf8());
+    file.close();
 }

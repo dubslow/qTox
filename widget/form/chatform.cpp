@@ -487,7 +487,7 @@ void ChatForm::onAvatarChange(int FriendId, const QPixmap &pic)
     if (FriendId != f->friendId)
         return;
 
-    avatar->setPixmap(pic);
+    avatar->setPixmap(pic, Qt::transparent);
 }
 
 void ChatForm::dragEnterEvent(QDragEnterEvent *ev)

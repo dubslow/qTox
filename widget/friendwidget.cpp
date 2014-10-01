@@ -139,8 +139,7 @@ void FriendWidget::onAvatarChange(int FriendId, const QPixmap& pic)
         return;
 
     isDefaultAvatar = false;
-    avatar->setPixmap(pic);
-    avatar->autopickBackground();
+    avatar->setPixmap(pic, Qt::transparent);
 }
 
 void FriendWidget::onAvatarRemoved(int FriendId)

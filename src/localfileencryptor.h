@@ -15,6 +15,7 @@
 */
 
 #include <QObject>
+#include <tox/toxencryptsave.h>
 
 class LocalFileEncryptor : public QObject
 {
@@ -31,7 +32,12 @@ public:
     QByteArray decryptData(const QByteArray& data, PasswordType passtype);
 
     static QByteArray getSaltFromFile(QString file);
-    
-private:
 
+private:
+    void printKeyDerivationError(TOX_ERR_KEY_DERIVATION &error);
+    void printEncryptionError(TOX_ERR_ENCRYPTION &error);
+    void printDecryptionError(TOX_ERR_DECRYPTION &error);
+
+private:
+    TOX_PASS_KEY *pwsaltedkeys[PasswordType::ptCounter];
 };
